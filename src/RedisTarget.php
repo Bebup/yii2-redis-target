@@ -26,6 +26,13 @@ class RedisTarget extends Target {
     public $key = 'log';
 
     /**
+     * The time to expire the key
+     *
+     * @var int
+     */
+    public $expire = 15552000; // 6 months
+
+    /**
      * Initializes the RedisTarget component.
      * This method will initialize the [[redis]] property to make sure it refers to a valid Redis connection.
      *
@@ -42,7 +49,9 @@ class RedisTarget extends Target {
     public function export() {
         foreach ($this->messages as $message) {
             $text = $this->formatMessage($message);
-            $this->redis->executeCommand('ZADD', [$this->key, time(), $text]);
+            $key = sprintf('%s:%s', $this->key, date('Y-m-d'));
+            $this->redis->executeCommand('ZADD', [$key, time(), $text]);
+            $this->redis->executeCommand('EXPIRE', [$key, $this->expire]);
         }
     }
 }
